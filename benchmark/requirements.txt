@@ -1,0 +1,18 @@
+polars>=0.20
+tqdm>=4.60
+pyarrow>=14.0
+numpy>=1.26
+pandas>=2.0
+matplotlib>=3.8
+plotly>=5.18
+kaleido>=0.2
+psutil>=5.9
+rich>=13.0
+jinja2>=3.1
+tabulate>=0.9
+ollama>=0.1
+
+# VectorBT — optional (may fail on Python 3.11+)
+# Install separately if needed:
+#   pip install vectorbt
+vectorbt

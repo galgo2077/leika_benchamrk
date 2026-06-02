@@ -1,0 +1,18 @@
+# Benchmark outputs
+benchmark_results/
+benchmark_reports/
+benchmark_history/
+benchmark_docs/
+
+# Python cache and environments
+__pycache__/
+.venv/
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore

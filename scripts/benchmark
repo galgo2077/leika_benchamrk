@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Benchmark entrypoint with quick/full AI presets."""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+BENCH = ROOT / "benchmark"
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(BENCH))
+
+import phase1_single
+import phase15_multi
+import phase2_single_ai
+import phase25_multi_ai
+import report_gen
+from ai_context import BenchmarkAiConfig
+from metrics import BenchResult
+
+
+FULL_AI_BARS = [1_000, 10_000]
+QUICK_BARS = [1_000]
+FULL_AI_MODES = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+QUICK_AI_MODES = [11, 13, 14, 15]
+QUICK_MODES = [1, 3, 4, 5]
+
+
+def _parse_csv_ints(value: str) -> list[int]:
+    return [int(v.strip()) for v in value.split(",") if v.strip()]
+
+
+def _run_mode(mode: int, bars: int, model: str, ai_config: BenchmarkAiConfig | None, run_ai: bool, extreme: bool) -> BenchResult:
+    if 1 <= mode <= 5:
+        return phase1_single.run(mode, bars=bars, extreme=extreme)
+    if 6 <= mode <= 10:
+        return phase15_multi.run(mode, bars=bars, extreme=extreme)
+    if 11 <= mode <= 15:
+        return phase2_single_ai.run(mode, bars=bars, model=model, extreme=extreme, ai_config=ai_config, run_ai=run_ai)
+    if 16 <= mode <= 20:
+        return phase25_multi_ai.run(mode, bars=bars, model=model, extreme=extreme, ai_config=ai_config, run_ai=run_ai)
+    raise ValueError(f"Unsupported benchmark mode {mode}")
+
+
+def _fallback_to_run_all(argv: list[str]) -> int:
+    return subprocess.call([sys.executable, str(BENCH / "run_all.py"), *argv], cwd=str(BENCH))
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Leika benchmark entrypoint")
+    parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--quick-ai", action="store_true")
+    parser.add_argument("--full-ai", action="store_true")
+    parser.add_argument("--ai", action="store_true")
+    parser.add_argument("--model", default="")
+    parser.add_argument("--ai-model", default="")
+    parser.add_argument("--ai-timeout", type=int, default=60)
+    parser.add_argument("--max-context-chars", type=int)
+    parser.add_argument("--max-output-tokens", type=int)
+    parser.add_argument("--max-ai-cases", type=int)
+    parser.add_argument("--bars", default="")
+    parser.add_argument("--out-dir", default="")
+    parser.add_argument("--extreme", action="store_true")
+    parser.add_argument("--benchmark", action="store_true")
+    parser.add_argument("--test", action="store_true")
+    parser.add_argument("--phase", default="")
+    parser.add_argument("--modes", default="")
+    parser.add_argument("--no-ai", action="store_true")
+    parser.add_argument("--live", action="store_true")
+    args, extra = parser.parse_known_args()
+
+    quick_ai = args.quick_ai or (args.quick and args.ai)
+    full_ai = args.full_ai or (args.ai and not quick_ai)
+    if not (args.quick or quick_ai or full_ai):
+        return _fallback_to_run_all(sys.argv[1:])
+
+    if quick_ai:
+        modes = QUICK_AI_MODES
+        bars = QUICK_BARS
+        ai_mode = "quick-ai"
+        max_ai_cases = args.max_ai_cases if args.max_ai_cases is not None else len(modes)
+        ai_model = args.ai_model or args.model or ""
+        max_context_chars = args.max_context_chars or 8_000
+        max_output_tokens = args.max_output_tokens or 512
+        timeout_seconds = args.ai_timeout or 60
+    elif full_ai:
+        modes = FULL_AI_MODES
+        bars = _parse_csv_ints(args.bars) if args.bars else FULL_AI_BARS
+        ai_mode = "full-ai"
+        max_ai_cases = args.max_ai_cases
+        ai_model = args.ai_model or args.model or "0xroyce/plutus:latest"
+        max_context_chars = args.max_context_chars or 32_000
+        max_output_tokens = args.max_output_tokens or 2_048
+        timeout_seconds = args.ai_timeout or 120
+    else:
+        modes = QUICK_MODES
+        bars = QUICK_BARS
+        ai_mode = "quick-ai"
+        max_ai_cases = 0
+        ai_model = args.ai_model or args.model or ""
+        max_context_chars = args.max_context_chars or 8_000
+        max_output_tokens = args.max_output_tokens or 512
+        timeout_seconds = args.ai_timeout or 60
+
+    ai_config = BenchmarkAiConfig(
+        ai_mode=ai_mode,
+        model=ai_model,
+        max_context_chars=max_context_chars,
+        max_output_tokens=max_output_tokens,
+        timeout_seconds=timeout_seconds,
+        max_ai_cases=max_ai_cases,
+    )
+
+    results: list[BenchResult] = []
+    ai_cases_done = 0
+    for mode in modes:
+        datasets = [{"bars": b} for b in bars]
+        for ds in datasets:
+            if mode in {11, 12, 13, 14, 15, 16, 17, 18, 19, 20}:
+                run_ai = ai_cases_done < (max_ai_cases if max_ai_cases is not None else 10**9)
+                result = _run_mode(mode, ds["bars"], ai_model, ai_config, run_ai, args.extreme)
+                if run_ai:
+                    ai_cases_done += 1
+            else:
+                result = _run_mode(mode, ds["bars"], ai_model, None, False, args.extreme)
+            results.append(result)
+
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    out_dir = args.out_dir or str(BENCH / "benchmark_results")
+    report_path = report_gen.generate_report(results, out_dir=out_dir, timestamp=ts)
+    print(report_path)
+
+    if any(r.ai_calls for r in results):
+        ai_results = [r for r in results if r.ai_calls or r.ai_total_time_ms > 0]
+        print(f"AI cases: {len(ai_results)}")
+        print(f"Fastest AI: {min((r.ai_total_time_ms for r in ai_results if r.ai_total_time_ms > 0), default=0):.1f} ms")
+        print(f"Slowest AI: {max((r.ai_total_time_ms for r in ai_results), default=0):.1f} ms")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,147 @@
+══════════════════════════════════════════════════════════════════════════════
+  LEIKA ENGINE — BENCHMARK REPORT
+  Generated: 20260531T200000Z
+══════════════════════════════════════════════════════════════════════════════
+
+  HARDWARE SNAPSHOT
+
+  CPU  : 13th Gen Intel(R) Core(TM) i7-13620H
+         16 logical threads  |  10 physical cores
+  RAM  : 16.4 GB
+  GPU  : NVIDIA GeForce RTX 4050 Laptop GPU
+         Util: 3.0%  |  Temp: 55.0°C  |  VRAM: 5235.0/6141.0 MB
+         Power draw: 12.7 W
+
+──────────────────────────────────────────────────────────────────────────────
+
+  MONTE CARLO BENCHMARKS  (Phase 3)
+
+    Runtime & Throughput
+
+  Mode   Engine                   Backend     Candles  Paths    Time(ms)   Ops/sec     Paths/sec 
+  ────── ──────────────────────── ─────────── ──────── ──────── ────────── ─────────── ──────────
+  25     MC Leika Mode 2          CUDA        8        4        202.4      0 K/s       0 K/s     
+  ────── ──────────────────────── ─────────── ──────── ──────── ────────── ─────────── ──────────
+
+    Memory & GPU
+
+  Mode   Engine                   Backend     Candles  Paths    RAM(MB)   GPU Util%  VRAM(MB)   NumErr    
+  ────── ──────────────────────── ─────────── ──────── ──────── ───────── ────────── ────────── ──────────
+  25     MC Leika Mode 2          CUDA        8        4        116       31%        5235       1.8e+01   
+  ────── ──────────────────────── ─────────── ──────── ──────── ───────── ────────── ────────── ──────────
+
+    GPU Metrics
+
+  Mode   Engine                   Backend     Candles  Paths    Kernel(ms)   Xfer(ms)     GPU Total    CPU Fallback
+  ────── ──────────────────────── ─────────── ──────── ──────── ──────────── ──────────── ──────────── ────────────
+  25     MC Leika Mode 2          CUDA        8        4        0.0          0.0          0.1          —           
+  ────── ──────────────────────── ─────────── ──────── ──────── ──────────── ──────────── ──────────── ────────────
+
+    GPU Acceleration Factor  (Mode 2 / Mode 1)
+
+
+    Speedup vs Python Baseline  (Mode 21)
+
+
+──────────────────────────────────────────────────────────────────────────────
+
+  RANDOM WALK SINGLE-ASSET  (Phase 4)
+
+    Runtime & Throughput
+
+  Mode   Engine                   Backend     Candles  Model              Time(ms)   Candles/sec NumErr    
+  ────── ──────────────────────── ─────────── ──────── ────────────────── ────────── ─────────── ──────────
+  30     RW Leika Mode 2          CUDA        8        gbm                145.10     0 K/s       1.8e+00   
+  ────── ──────────────────────── ─────────── ──────── ────────────────── ────────── ─────────── ──────────
+
+    GPU Metrics
+
+  Mode   Engine                   Backend     Candles  Model              Kernel(ms)   Xfer(ms)     GPU Total    CPU Fallback
+  ────── ──────────────────────── ─────────── ──────── ────────────────── ──────────── ──────────── ──────────── ────────────
+  30     RW Leika Mode 2          CUDA        8        gbm                0.0          0.0          0.0          —           
+  ────── ──────────────────────── ─────────── ──────── ────────────────── ──────────── ──────────── ──────────── ────────────
+
+    Model Throughput Comparison  (best engine, 10k candles)
+
+
+    Speedup vs Python Baseline  (Mode 26)
+
+
+──────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────
+
+  PER-MODE DETAILS
+
+  [MODE 25] MC Leika Mode 2  (Phase 3)
+
+    Dataset: 8 candles × 4 paths
+      Backend          : CUDA
+      Exec time          : 202.366 ms
+      Throughput         : 0 K/s
+      Paths/sec          : 0 K/s
+      CPU usage          : 0.0%
+      RAM usage          : 116.5 MB
+      GPU util           : 31.0%
+      GPU temp           : 54°C
+      GPU VRAM used      : 5235 MB
+      GPU kernel ms      : 0.0
+      GPU transfer ms    : 0.0
+      GPU total ms       : 0.1
+      CPU fallback ms    : 0.0
+      Num error rel      : 1.78e+01
+
+  [MODE 30] RW Leika Mode 2  (Phase 4)
+
+    Dataset: 8 candles  [gbm]
+      Backend          : CUDA
+      Exec time          : 145.104 ms
+      Throughput         : 0 K/s
+      Paths/sec          : 0 K/s
+      CPU usage          : 0.0%
+      RAM usage          : 127.4 MB
+      GPU util           : 30.0%
+      GPU temp           : 55°C
+      GPU VRAM used      : 5235 MB
+      GPU kernel ms      : 0.0
+      GPU transfer ms    : 0.0
+      GPU total ms       : 0.0
+      CPU fallback ms    : 0.0
+      Num error rel      : 1.76e+00
+
+──────────────────────────────────────────────────────────────────────────────
+
+  FINAL ANALYSIS
+
+    Fastest at 8 bars: MODE 30 (RW Leika Mode 2) — 145.10 ms
+
+
+
+
+    Scalability (throughput by bar count):
+
+──────────────────────────────────────────────────────────────────────────────
+
+  OVERALL LEADERBOARD
+
+    ── Monte Carlo ──
+
+      Fastest Runtime          : Mode 25 (MC Leika Mode 2)  →  202.4 ms
+      Best Throughput          : Mode 25 (MC Leika Mode 2)  →  0 K/s
+      Lowest Memory            : Mode 25 (MC Leika Mode 2)  →  116 MB
+      Best GPU Utilization     : Mode 25 (MC Leika Mode 2)  →  31%
+      Best Scaling             : Mode 25 (MC Leika Mode 2)  →  0.00×
+
+    ── Random Walk ──
+
+      Fastest Runtime          : Mode 30 (RW Leika Mode 2) [gbm]  →  145.1 ms
+      Best Throughput          : Mode 30 (RW Leika Mode 2) [gbm]  →  0 K/s
+      Lowest Memory            : Mode 30 (RW Leika Mode 2) [gbm]  →  127 MB
+      Best GPU Utilization     : Mode 30 (RW Leika Mode 2) [gbm]  →  30%
+      Best Scaling             : Mode 30 (RW Leika Mode 2) [gbm]  →  0.00×
+
+──────────────────────────────────────────────────────────────────────────────
+
+══════════════════════════════════════════════════════════════════════════════
+  END OF REPORT
+══════════════════════════════════════════════════════════════════════════════
